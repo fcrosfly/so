@@ -70,7 +70,7 @@ ZEND_GET_MODULE(haojing)
  */
 PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("haojing.profiling", "0", PHP_INI_ALL, OnUpdateLong, profiling, zend_haojing_globals, haojing_globals)
-    STD_PHP_INI_ENTRY("profiling_percent", "100", PHP_INI_ALL, OnUpdateLong, profiling, zend_haojing_globals, haojing_globals)
+    STD_PHP_INI_ENTRY("haojing.profiling_percent", "100", PHP_INI_ALL, OnUpdateLong, profiling_percent, zend_haojing_globals, haojing_globals)
     STD_PHP_INI_ENTRY("haojing.profiling_mintime", "300", PHP_INI_ALL, OnUpdateLong, profiling_mintime, zend_haojing_globals, haojing_globals)
 PHP_INI_END()
 /* }}} */

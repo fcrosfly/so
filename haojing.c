@@ -43,6 +43,8 @@ const zend_function_entry haojing_functions[] = {
 	PHP_FE(confirm_haojing_compiled,	NULL)		/* For testing, remove later. */
 	PHP_FE(isint,  NULL)
 	PHP_FE(utf8_filter, NULL)
+	PHP_FE(a2o, NULL)
+	PHP_FE(o2a, NULL)
 	PHP_FE_END	/* Must be the last line in haojing_functions[] */
 };
 /* }}} */
@@ -258,6 +260,162 @@ PHP_FUNCTION(utf8_filter)
 	zval_ptr_dtor(&subpats);
 }
 /* }}} */
+
+/* {{{ proto object a2o(array arr, object obj [, array except])
+convert array to object */
+PHP_FUNCTION(a2o)
+{
+	zval *arr, *obj, *except = NULL;
+	int is_set_except = 1;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ao|a", &arr, &obj, &except) == FAILURE) {
+		return;
+	}
+
+	if (!except) {
+		// set default except
+		is_set_except = 0;
+		MAKE_STD_ZVAL(except);
+		array_init(except);
+	}
+	// make the value of except be the key of except_flip
+	zval *except_flip, **entry, *data;
+	MAKE_STD_ZVAL(except_flip);
+	array_init_size(except_flip, zend_hash_num_elements(Z_ARRVAL_P(except)));
+
+	zend_hash_internal_pointer_reset(Z_ARRVAL_P(except));
+	while (zend_hash_get_current_data(Z_ARRVAL_P(except), (void **)&entry) == SUCCESS) {
+		MAKE_STD_ZVAL(data);
+		Z_TYPE_P(data) = IS_LONG;
+		Z_LVAL_P(data) = 0; 
+
+		if (Z_TYPE_PP(entry) == IS_LONG) {
+			zend_hash_index_update(Z_ARRVAL_P(except_flip), Z_LVAL_PP(entry), &data, sizeof(data), NULL);
+		} else if (Z_TYPE_PP(entry) == IS_STRING) {
+			zend_symtable_update(Z_ARRVAL_P(except_flip), Z_STRVAL_PP(entry), Z_STRLEN_PP(entry) + 1, &data, sizeof(data), NULL);
+		} else {
+			zval_ptr_dtor(&data);
+			//php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Can only flip STRING and INTEGER values!");
+		}
+		zend_hash_move_forward(Z_ARRVAL_P(except));
+	}
+
+	zval **current;
+	zend_object *zobj = zend_objects_get_address(obj TSRMLS_CC);
+	zend_hash_internal_pointer_reset(Z_ARRVAL_P(arr));
+	while (zend_hash_get_current_data(Z_ARRVAL_P(arr), (void **) &current) == SUCCESS) {
+		char *string_key = NULL;
+		uint  string_key_len;
+		long long num_key;
+
+		SEPARATE_ZVAL(current);
+		zend_hash_get_current_key_ex(Z_ARRVAL_P(arr), &string_key, &string_key_len, &num_key, 0, NULL);
+		if (!string_key) {
+			// key is numeric . convert to string
+			if (!zend_hash_index_exists(Z_ARRVAL_P(except_flip), num_key)) {
+				string_key = (char *)malloc(20);
+				string_key_len = sprintf(string_key, "%lli", num_key);
+				if (zend_check_property_access(zobj, string_key, string_key_len TSRMLS_CC) == SUCCESS)
+					zend_update_property(NULL, obj, string_key, string_key_len, *current TSRMLS_CC);
+			}
+		} else {
+			// key is string
+			if (!zend_hash_exists(Z_ARRVAL_P(except_flip), string_key, string_key_len)) {
+				if (zend_check_property_access(zobj, string_key, string_key_len - 1 TSRMLS_CC) == SUCCESS) {
+					zend_update_property(NULL, obj, string_key, string_key_len - 1, *current TSRMLS_CC);
+				}
+			}
+		}
+		zend_hash_move_forward(Z_ARRVAL_P(arr));
+	}
+	
+	/* clean up */
+	zval_ptr_dtor(&except_flip);
+	if (!is_set_except) {
+		zval_ptr_dtor(&except);
+	}
+	RETURN_ZVAL(obj, 1, 0);
+}
+/* }}} */
+
+/* {{{ proto array o2a(object obj [, array except])
+convert object to array */
+PHP_FUNCTION(o2a)
+{
+	zval *obj = NULL, *except = NULL;
+	int is_set_except = 1;
+	HashTable *properties;
+	HashPosition pos;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o|a", &obj, &except) == FAILURE) {
+		return;
+	}
+	if (Z_OBJ_HT_P(obj)->get_properties == NULL) {
+		RETURN_FALSE;
+	}
+	properties = Z_OBJ_HT_P(obj)->get_properties(obj TSRMLS_CC);
+	if (properties == NULL) {
+		RETURN_FALSE;
+	}
+
+	if (!except) {
+		// set default except
+		is_set_except = 0;
+		MAKE_STD_ZVAL(except);
+		array_init(except);
+	}
+	// make the value of except be the key of except_flip
+	zval *except_flip, **entry, *data;
+	MAKE_STD_ZVAL(except_flip);
+	array_init_size(except_flip, zend_hash_num_elements(Z_ARRVAL_P(except)));
+
+	zend_hash_internal_pointer_reset(Z_ARRVAL_P(except));
+	while (zend_hash_get_current_data(Z_ARRVAL_P(except), (void **)&entry) == SUCCESS) {
+		MAKE_STD_ZVAL(data);
+		Z_TYPE_P(data) = IS_LONG;
+		Z_LVAL_P(data) = 0; 
+		if (Z_TYPE_PP(entry) == IS_LONG) {
+			zend_hash_index_update(Z_ARRVAL_P(except_flip), Z_LVAL_PP(entry), &data, sizeof(data), NULL);
+		} else if (Z_TYPE_PP(entry) == IS_STRING) {
+			zend_symtable_update(Z_ARRVAL_P(except_flip), Z_STRVAL_PP(entry), Z_STRLEN_PP(entry) + 1, &data, sizeof(data), NULL);
+		} else {
+			zval_ptr_dtor(&data);
+		}
+		zend_hash_move_forward(Z_ARRVAL_P(except));
+	}
+
+	
+	zend_object *zobj = zend_objects_get_address(obj TSRMLS_CC);
+	zval **value;
+	const char *prop_name, *class_name;
+	char *string_key ;
+	uint string_key_len;
+	ulong num_key;
+
+	array_init(return_value);
+
+	zend_hash_internal_pointer_reset_ex(properties, &pos);
+	while (zend_hash_get_current_data_ex(properties, (void **) &value, &pos) == SUCCESS) {
+		if (zend_hash_get_current_key_ex(properties, &string_key, &string_key_len, &num_key, 0, &pos) == HASH_KEY_IS_STRING) {
+			if (!zend_symtable_exists(Z_ARRVAL_P(except_flip), string_key, string_key_len))
+			if (zend_check_property_access(zobj, string_key, string_key_len-1 TSRMLS_CC) == SUCCESS) {
+				zend_unmangle_property_name(string_key, string_key_len-1, &class_name, &prop_name);
+				Z_ADDREF_PP(value);
+				add_assoc_zval_ex(return_value, prop_name, strlen(prop_name) + 1, *value);
+			}
+		}
+		zend_hash_move_forward_ex(properties, &pos);
+	}
+
+	/* clean up */
+	zval_ptr_dtor(&except_flip);
+	if (!is_set_except) {
+		zval_ptr_dtor(&except);
+	}
+}
+/* }}} */
+
+
 
 /*
  * Local variables:

@@ -43,7 +43,10 @@ PHP_RSHUTDOWN_FUNCTION(haojing);
 PHP_MINFO_FUNCTION(haojing);
 
 PHP_FUNCTION(confirm_haojing_compiled);	/* For testing, remove later. */
-
+PHP_FUNCTION(isint);
+PHP_FUNCTION(utf8_filter);
+PHP_FUNCTION(a2o);
+PHP_FUNCTION(o2a);
 
 ZEND_BEGIN_MODULE_GLOBALS(haojing)
 	long  profiling;

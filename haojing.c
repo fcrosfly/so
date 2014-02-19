@@ -41,10 +41,10 @@ static int le_haojing;
  */
 const zend_function_entry haojing_functions[] = {
 	PHP_FE(confirm_haojing_compiled,	NULL)		/* For testing, remove later. */
-	PHP_FE(isint,  NULL)
-	PHP_FE(utf8_filter, NULL)
-	PHP_FE(a2o, NULL)
-	PHP_FE(o2a, NULL)
+	PHP_FE(hj_isint,  NULL)
+	PHP_FE(hj_utf8_filter, NULL)
+	PHP_FE(hj_a2o, NULL)
+	PHP_FE(hj_o2a, NULL)
 	PHP_FE_END	/* Must be the last line in haojing_functions[] */
 };
 /* }}} */
@@ -176,9 +176,9 @@ PHP_FUNCTION(confirm_haojing_compiled)
    follow this convention for the convenience of others editing your code.
 */
 
-/* {{{ proto bool isint(mixed arg)
+/* {{{ proto bool hj_isint(mixed arg)
 Return a bool to confirm that whether the argument is integer */
-PHP_FUNCTION(isint)
+PHP_FUNCTION(hj_isint)
 {
 	zval **arg;
 
@@ -199,9 +199,9 @@ PHP_FUNCTION(isint)
 }
 /* }}} */
 
-/* {{{ proto string utf8_filter(string subject [,int mode])
+/* {{{ proto string hj_utf8_filter(string subject [,int mode])
 Return a string blablabla */
-PHP_FUNCTION(utf8_filter)
+PHP_FUNCTION(hj_utf8_filter)
 {
 	/* parameters */
 	char			   *regex = "#([\x09\x0A\x0D\x20-\x7E]|[\xC2-\xDF][\x80-\xBF]|\xE0[\xA0-\xBF][\x80-\xBF]|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}|\xED[\x80-\x9F][\x80-\xBF])++#"; 
@@ -261,9 +261,9 @@ PHP_FUNCTION(utf8_filter)
 }
 /* }}} */
 
-/* {{{ proto object a2o(array arr, object obj [, array except])
+/* {{{ proto object hj_a2o(array arr, object obj [, array except])
 convert array to object */
-PHP_FUNCTION(a2o)
+PHP_FUNCTION(hj_a2o)
 {
 	zval *arr, *obj, *except = NULL;
 	int is_set_except = 1;
@@ -338,9 +338,9 @@ PHP_FUNCTION(a2o)
 }
 /* }}} */
 
-/* {{{ proto array o2a(object obj [, array except])
+/* {{{ proto array hj_o2a(object obj [, array except])
 convert object to array */
-PHP_FUNCTION(o2a)
+PHP_FUNCTION(hj_o2a)
 {
 	zval *obj = NULL, *except = NULL;
 	int is_set_except = 1;

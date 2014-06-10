@@ -47,6 +47,7 @@ PHP_FUNCTION(hj_isint);
 PHP_FUNCTION(hj_utf8_filter);
 PHP_FUNCTION(hj_a2o);
 PHP_FUNCTION(hj_o2a);
+PHP_FUNCTION(hj_get_ref);
 
 ZEND_BEGIN_MODULE_GLOBALS(haojing)
 	long  profiling;

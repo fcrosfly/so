@@ -45,6 +45,7 @@ const zend_function_entry haojing_functions[] = {
 	PHP_FE(hj_utf8_filter, NULL)
 	PHP_FE(hj_a2o, NULL)
 	PHP_FE(hj_o2a, NULL)
+	PHP_FE(hj_get_ref, NULL)
 	PHP_FE_END	/* Must be the last line in haojing_functions[] */
 };
 /* }}} */
@@ -415,7 +416,14 @@ PHP_FUNCTION(hj_o2a)
 }
 /* }}} */
 
-
+PHP_FUNCTION(hj_get_ref)
+{
+	zval *obj = NULL, *except = NULL;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &obj, &except) == FAILURE) {
+	       return;
+    }
+	RETVAL_LONG(Z_REFCOUNT_P(obj));
+}
 
 /*
  * Local variables:
